@@ -776,6 +776,20 @@ class PageBarState extends State<PageBar> {
 
   @override
   Widget build(BuildContext context) {
+    Map<PageData, double> widths = {};
+    int totalDurationInSecond = 0;
+    widget.pages.forEach((element) {
+      totalDurationInSecond += element.duration.inSeconds;
+    });
+    double totalSpacing =
+        widget.pages.length == 0 ? 0 : (widget.pages.length - 1) * this.spacing;
+    double totalWidth = MediaQuery.of(context).size.width - 32 - totalSpacing;
+    widget.pages.forEach((element) {
+      double elementDurationFraction =
+          (element.duration.inSeconds / totalDurationInSecond) * 100;
+      totalDurationInSecond += element.duration.inSeconds;
+      widths[element] = totalWidth * elementDurationFraction;
+    });
     return Row(
       children: widget.pages.map((it) {
         return Expanded(
@@ -784,6 +798,7 @@ class PageBarState extends State<PageBar> {
                 right: widget.pages.last == it ? 0 : this.spacing),
             child: StoryProgressIndicator(
               isPlaying(it) ? widget.animation!.value : (it.shown ? 1 : 0),
+              widths[it] as double,
               indicatorHeight:
                   widget.indicatorHeight == IndicatorHeight.large ? 5 : 3,
             ),
@@ -800,9 +815,11 @@ class StoryProgressIndicator extends StatelessWidget {
   /// From `0.0` to `1.0`, determines the progress of the indicator
   final double value;
   final double indicatorHeight;
+  final double indicatorWidth;
 
   StoryProgressIndicator(
-    this.value, {
+    this.value,
+    this.indicatorWidth, {
     this.indicatorHeight = 5,
   }) : assert(indicatorHeight != null && indicatorHeight > 0,
             "[indicatorHeight] should not be null or less than 1");
@@ -810,9 +827,7 @@ class StoryProgressIndicator extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return CustomPaint(
-      size: Size.fromHeight(
-        this.indicatorHeight,
-      ),
+      size: Size(this.indicatorWidth, this.indicatorHeight),
       foregroundPainter: IndicatorOval(
         Colors.white.withOpacity(0.8),
         this.value,
